@@ -1,13 +1,26 @@
 import json
 from .core import Graph
+from .utils import apply_component_strategy
 
 
-def load_graph_from_json(filepath: str, directed: bool = True) -> Graph:
+def load_graph_from_json(
+        filepath: str,
+        directed: bool = True,
+        strategy: str = 'all',
+) -> Graph:
     """
     Load a graph from a JSON file.
 
     :param filepath: Path to the JSON file
     :param directed: Whether the graph is directed
+    :param strategy: Optional strategy for handling disconnected components in the graph.
+                               Valid values:
+                                 - "all" (default): Keep all components as-is.
+                                 - "largest": Keep only the largest connected component.
+                                 - "label": Keep all components, but add a `component_id`
+                                            attribute to each node indicating its component.
+                               Use "largest" for typical routing tasks to ensure a connected network,
+                               or "label" for analysis/visualization.
     :return: Graph object
     """
     graph = Graph(directed=directed)
@@ -28,4 +41,4 @@ def load_graph_from_json(filepath: str, directed: bool = True) -> Graph:
         cost = float(edge["cost"])
         graph.add_edge(from_id, to_id, cost)
 
-    return graph
+    return apply_component_strategy(graph, strategy)

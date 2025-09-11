@@ -112,6 +112,21 @@ class Graph:
         """
         return node_id in self.nodes
 
+    def set_node_attr(self, node_id: str, attr_name: str, attr: any):
+        """
+        Set a new attr for a node
+        :param node_id: ID of the node to set a new attr.
+        :param attr_name: Name of a new attr.
+        :param attr: Value of a new attr.
+        :raise ValueError: If a node was not found.
+        """
+        if self.has_node(node_id):
+            node = self.get_node(node_id)
+            node.attrs[attr_name] = attr
+            return
+
+        raise ValueError(f'Node: {node_id} not found')
+
     def get_all_nodes(self) -> list[Node]:
         """
         Get all nodes in the graph.

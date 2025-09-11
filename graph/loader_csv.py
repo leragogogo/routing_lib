@@ -1,11 +1,13 @@
 import csv
 from .core import Graph
+from .utils import apply_component_strategy
 
 
 def load_graph_from_csv(
-    node_file_path: str,
-    edge_file_path: str,
-    directed: bool = True
+        node_file_path: str,
+        edge_file_path: str,
+        directed: bool = True,
+        strategy: str = 'all',
 ) -> Graph:
     """
     Load a graph from two CSV files: one for nodes and one for edges.
@@ -13,6 +15,14 @@ def load_graph_from_csv(
     :param node_file_path: Path to the CSV file with nodes (must include 'id')
     :param edge_file_path: Path to the CSV file with edges (must include 'from', 'to', 'cost')
     :param directed: Whether the graph is directed
+    :param strategy: Optional strategy for handling disconnected components in the graph.
+                               Valid values:
+                                 - "all" (default): Keep all components as-is.
+                                 - "largest": Keep only the largest connected component.
+                                 - "label": Keep all components, but add a `component_id`
+                                            attribute to each node indicating its component.
+                               Use "largest" for typical routing tasks to ensure a connected network,
+                               or "label" for analysis/visualization.
     :return: Graph object
     """
     graph = Graph(directed=directed)
@@ -40,4 +50,4 @@ def load_graph_from_csv(
             cost = float(row["cost"])
             graph.add_edge(from_id, to_id, cost)
 
-    return graph
+    return apply_component_strategy(graph, strategy)

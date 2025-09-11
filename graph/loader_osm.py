@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 from .core import Graph
-from .utils import haversine
+from .utils import haversine,apply_component_strategy
 from typing import Callable
 
 
@@ -15,16 +15,25 @@ def get_builtin_way_filter(filter_name: str) -> Callable[[dict], bool]:
     if filter_name == "driveable":
         valid = {
             "motorway", "trunk", "primary", "secondary", "tertiary",
-            "residential", "unclassified", "service"
+            "residential", "unclassified", "service",
+            "living_street", "road",
+            "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link",
         }
         return lambda tags: tags.get("highway") in valid
 
     elif filter_name == "pedestrian":
-        valid = {"footway", "path", "pedestrian", "steps"}
+        valid = {
+            "footway", "path", "pedestrian", "steps",
+            "crossing", "platform", "corridor", "living_street",
+        }
         return lambda tags: tags.get("highway") in valid
 
     elif filter_name == "bicycle":
-        valid = {"cycleway", "path", "track"}
+        valid = {
+            "cycleway", "path", "track",
+            "residential", "unclassified", "service", "living_street", "road",
+            "tertiary", "secondary",
+        }
         return lambda tags: tags.get("highway") in valid
 
     else:
@@ -35,11 +44,11 @@ def load_graph_from_osm_xml(
         filepath: str,
         directed: bool = False,
         filter_name: str = None,
-        way_filter: Callable[[dict], bool] = None
+        way_filter: Callable[[dict], bool] = None,
+        strategy: str = 'all',
 ) -> Graph:
     """
     Load a graph from an OSM XML (.osm) file.
-
     :param filepath: Path to the .osm XML file.
     :param directed: Whether the graph should be directed (default: False).
     :param filter_name: Optional predefined filter to select which ways are included.
@@ -52,11 +61,20 @@ def load_graph_from_osm_xml(
                        A callable that takes a dictionary of OSM tags (`dict[str, str]`)
                        and returns `True` if the way should be included, or `False` to skip it.
                        This takes precedence over `filter_name` if provided.
+    :param strategy: Optional strategy for handling disconnected components in the graph.
+                               Valid values:
+                                 - "all" (default): Keep all components as-is.
+                                 - "largest": Keep only the largest connected component.
+                                 - "label": Keep all components, but add a `component_id`
+                                            attribute to each node indicating its component.
+                               Use "largest" for typical routing tasks to ensure a connected network,
+                               or "label" for analysis/visualization.
     :return: Graph object.
     """
     graph = Graph(directed=directed)
-    # Node coords to calculate haversine distance
-    node_coords = {}
+
+    # All nodes
+    node_data: dict[str, dict] = {}
 
     # Determine built-in filter if applicable
     if way_filter is None and filter_name:
@@ -84,11 +102,12 @@ def load_graph_from_osm_xml(
         if "lon" in attrs:
             attrs["lon"] = float(attrs["lon"])
 
-        graph.add_node(node_id, **attrs)
-        if "lat" in attrs and "lon" in attrs:
-            node_coords[node_id] = (attrs["lat"], attrs["lon"])
+        node_data[node_id] = attrs
 
-    # Extract ways and filter them
+    filtered_nodes: set[str] = set()
+    edges: list[tuple[str,str]] = []
+
+    # Extract and filter ways. Identify only filtered nodes
     for way in root.findall("way"):
         tags = {tag.attrib["k"]: tag.attrib["v"] for tag in way.findall("tag")}
 
@@ -101,21 +120,33 @@ def load_graph_from_osm_xml(
             from_id = node_refs[i]
             to_id = node_refs[i + 1]
 
-            # Add missing nodes if not already present
-            if not graph.has_node(from_id):
-                graph.add_node(from_id)
-            if not graph.has_node(to_id):
-                graph.add_node(to_id)
+            edges.append((from_id, to_id))
+            filtered_nodes.add(from_id)
+            filtered_nodes.add(to_id)
 
-            # If both have coordinates, calculate real distance
-            if from_id in node_coords and to_id in node_coords:
-                lat1, lon1 = node_coords[from_id]
-                lat2, lon2 = node_coords[to_id]
-                cost = haversine(lat1, lon1, lat2, lon2)
-            else:
-                # Use fallback cost if coordinates are missing
-                cost = None
+    # Dict with lat and lon af each filtered node
+    node_coords: dict[str, tuple[float, float]] = {}
 
-            graph.add_edge(from_id, to_id, cost)
+    # Add filtered nodes to a graph
+    for node_id in filtered_nodes:
+        attrs = node_data.get(node_id, {})
+        graph.add_node(node_id, **attrs)
 
-    return graph
+        lat = attrs.get("lat")
+        lon = attrs.get("lon")
+        if lat is not None and lon is not None:
+            node_coords[node_id] = (lat, lon)
+
+    # Add filtered edges to a graph
+    for from_id, to_id in edges:
+        if from_id in node_coords and to_id in node_coords:
+            lat1, lon1 = node_coords[from_id]
+            lat2, lon2 = node_coords[to_id]
+            cost = haversine(lat1, lon1, lat2, lon2)
+        else:
+            # Use fallback cost if coordinates are missing
+            cost = None
+
+        graph.add_edge(from_id, to_id, cost)
+
+    return apply_component_strategy(graph, strategy)

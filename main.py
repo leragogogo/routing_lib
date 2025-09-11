@@ -1,16 +1,9 @@
-# This is a sample Python script.
+from graph.loader_osm import load_graph_from_osm_xml
+from graph.visualizer import plot_graph
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+if __name__ == "__main__":
+    graph = load_graph_from_osm_xml("data/sample.osm", filter_name="driveable", strategy="largest")
+    plot_graph(graph)
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/

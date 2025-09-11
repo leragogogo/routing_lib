@@ -80,9 +80,8 @@ def test_osm_graph_with_no_ways(monkeypatch):
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
     graph = load_graph_from_osm_xml("fake.osm")
 
-    assert graph.has_node("A")
-    assert graph.has_node("B")
-    assert graph.get_neighbors("A") == {}
+    assert not graph.has_node("A")
+    assert not graph.has_node("B")
 
 
 def test_empty_osm_file(monkeypatch):
@@ -119,6 +118,14 @@ def test_node_with_extra_attributes_and_tags(monkeypatch):
             <tag k="amenity" v="cafe" />
             <tag k="name" v="Starbucks" />
         </node>
+        <node id="N2" lat="52.8" lon="13.5" user="bob" uid="1002">
+            <tag k="amenity" v="cafe" />
+            <tag k="name" v="KFC" />
+        </node>
+        <way id="1">
+            <nd ref="N1" />
+            <nd ref="N2" />
+        </way>
     </osm>
     """
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
