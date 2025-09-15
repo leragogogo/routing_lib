@@ -4,7 +4,7 @@ import numpy as np
 def tsp_nn(
         stops: list[str],
         distances: np.ndarray,
-        index: dict[str, int],
+        node_to_index: dict[str, int],
         start: str,
         return_to_start: bool = False
 ) -> tuple[list[str], float]:
@@ -15,10 +15,12 @@ def tsp_nn(
     distance between stops[i] and stops[j]. Greedily picks the nearest
     unvisited stop at each step.
 
+    Feasible for graphs with approximately up to 50 nodes.
+
     :param stops: List of stop IDs.
     :param distances: NumPy (n x n) array of pairwise distances between stops.
                  dist[i, j] may be asymmetric (directed graphs). Must be >= 0 or inf.
-    :param index: Dictionary of nodes and its corresponding index.
+    :param node_to_index: Dictionary of nodes and its corresponding index.
     :param start: ID of the starting stop (must be in `stops`).
     :param return_to_start: If True, closes the tour by returning to `start`.
     :return: (tour_ids, total_length)
@@ -32,10 +34,10 @@ def tsp_nn(
     if distances.shape != (n, n):
         raise ValueError(f"dist shape {distances.shape} does not match len(stops)={n}")
 
-    if start not in index:
+    if start not in node_to_index:
         raise ValueError(f"Start node {start!r} is not found in stops")
 
-    start_idx = index[start]
+    start_idx = node_to_index[start]
     # Keep track of visited stops
     visited = np.zeros(n, dtype=bool)
     # Order of visited stops

@@ -6,13 +6,13 @@ from graph.core import Graph
 def distance_matrix(
         graph: Graph,
         stops: list[str]
-) -> tuple[np.ndarray, dict[str, int], dict[tuple[str, str], list[str]]]:
+) -> tuple[np.ndarray, dict[str, int], dict[int,str], dict[tuple[str, str], list[str]]]:
     """
     Compute shortest path distances between all given stops.
 
     Runs Dijkstra from each stop and builds:
       - a dense NumPy distance matrix,
-      - an index mapping from node IDs to matrix positions,
+      - an node_to_index mapping from node IDs to matrix positions,
       - a dictionary of reconstructed paths.
 
     :param graph: Graph object.
@@ -21,14 +21,16 @@ def distance_matrix(
         matrix: np.ndarray (n x n) of shortest path distances.
                 matrix[i, j] = shortest distance from stops[i] to stops[j].
                 If unreachable, value is np.inf.
-        index: dict[node_id -> int], maps node IDs to row/col indices of the matrix.
+        node_to_index: dict[node_id -> int], maps node IDs to row/col indices of the matrix.
         paths: dict[(source, target) -> list[str]], shortest path as a sequence of node IDs.
                Empty list if target is unreachable.
     """
     n = len(stops)
     matrix = np.full((n, n), np.inf, dtype=float)
 
-    index = {node: i for i, node in enumerate(stops)}
+    # Mapping nodes to indexes and vice versa
+    node_to_index = {node: i for i, node in enumerate(stops)}
+    index_to_node = {i: node for i, node in enumerate(stops)}
 
     # Path for each pair
     paths: dict[tuple[str, str], list[str]] = {}
@@ -36,11 +38,11 @@ def distance_matrix(
     for source in stops:
         d, prev = dijkstra(graph, source)
         for target in stops:
-            i, j = index[source], index[target]
+            i, j = node_to_index[source], node_to_index[target]
             if source == target:
                 matrix[i][j] = 0.0
             else:
                 matrix[i][j] = d[target]
                 paths[(source, target)] = reconstruct_path(prev, source, target)
 
-    return matrix, index, paths
+    return matrix, node_to_index, index_to_node, paths
