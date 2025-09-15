@@ -101,6 +101,8 @@ def apply_component_strategy(graph: Graph, strategy: str = 'all') -> Graph:
         return graph
     elif strategy == 'largest':
         components = connected_components(graph)
+        if len(components) == 0:
+            return Graph()
         largest = max(components, key=len)
         return extract_component(graph, largest)
     elif strategy == 'label':
