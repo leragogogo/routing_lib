@@ -1,4 +1,5 @@
 venv/
 .env/
+data/sample.osm
 __pycache__/
 *.pyc
