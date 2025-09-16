@@ -5,7 +5,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import io
 import pytest
-from graph.loader_csv import load_graph_from_csv
+from graph.loader.loader_csv import CSVLoader
+from graph.loader.loader import LoadOptions, CSVSource
 
 
 # Sample test data
@@ -38,7 +39,10 @@ def mock_open(monkeypatch, sample_csv_data):
 
 # Test using the mocked open and sample data
 def test_load_graph_from_csv(mock_open):
-    graph = load_graph_from_csv("nodes.csv", "edges.csv", directed=True)
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=True),
+    )
 
     # Node checks
     assert graph.has_node("A")
@@ -46,8 +50,8 @@ def test_load_graph_from_csv(mock_open):
     assert graph.get_node("A").get_attrs()["lat"] == 52.52
 
     # Edge checks
-    assert graph.get_neighbors("A") == {"B": 2.3}
-    assert graph.get_neighbors("B") == {"A": 2.5}
+    assert graph.get_neighbours("A") == {"B": 2.3}
+    assert graph.get_neighbours("B") == {"A": 2.5}
     assert graph.get_edge_cost("A", "B") == 2.3
     assert graph.get_edge_cost("B", "A") == 2.5
 
@@ -67,7 +71,10 @@ A,B,1.0
 
     monkeypatch.setattr("builtins.open", _mock_open)
 
-    graph = load_graph_from_csv("nodes.csv", "edges.csv")
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=False)
+    )
     assert graph.has_node("A")
     assert graph.has_node("B")
     assert graph.get_edge_cost("A", "B") == 1.0
@@ -89,10 +96,14 @@ B
 
     monkeypatch.setattr("builtins.open", _mock_open)
 
-    graph = load_graph_from_csv("nodes.csv", "edges.csv")
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=False),
+    )
+
     assert graph.has_node("A")
     assert graph.has_node("B")
-    assert graph.get_neighbors("A") == {}
+    assert graph.get_neighbours("A") == {}
 
 
 def test_load_empty_csv(monkeypatch):
@@ -108,7 +119,11 @@ def test_load_empty_csv(monkeypatch):
 
     monkeypatch.setattr("builtins.open", _mock_open)
 
-    graph = load_graph_from_csv("nodes.csv", "edges.csv")
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=False),
+    )
+
     assert graph.get_all_nodes() == []
 
 
@@ -130,7 +145,11 @@ X,Y,10
 
     monkeypatch.setattr("builtins.open", _mock_open)
 
-    graph = load_graph_from_csv("nodes.csv", "edges.csv", directed=False)
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=False),
+    )
+
     assert graph.get_edge_cost("X", "Y") == 10
     assert graph.get_edge_cost("Y", "X") == 10  # reverse edge
 
@@ -150,7 +169,11 @@ N1,10.5,Start
 
     monkeypatch.setattr("builtins.open", _mock_open)
 
-    graph = load_graph_from_csv("nodes.csv", "edges.csv")
+    graph = CSVLoader().load(
+        CSVSource("nodes.csv", "edges.csv"),
+        LoadOptions(directed=False),
+    )
+
     node = graph.get_node("N1")
 
     assert node.get_attrs()["lat"] == 10.5

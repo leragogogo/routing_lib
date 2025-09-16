@@ -1,5 +1,4 @@
 import heapq
-
 from graph.core import Graph
 
 

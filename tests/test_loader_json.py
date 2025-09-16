@@ -1,10 +1,12 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 import io
 import pytest
-from graph.loader_json import load_graph_from_json
+from graph.loader.loader_json import JSONLoader
+from graph.loader.loader import LoadOptions, JSONSource
 
 
 # Sample test data
@@ -22,7 +24,7 @@ def sample_json_data():
     }
 
 
-# Monkeypatch built-in open to return a fake file object
+# Return a fake file object
 @pytest.fixture
 def mock_open(monkeypatch, sample_json_data):
     json_str = json.dumps(sample_json_data)
@@ -37,7 +39,10 @@ def mock_open(monkeypatch, sample_json_data):
 
 # Test using the mocked open and sample data
 def test_load_graph_from_json(mock_open):
-    graph = load_graph_from_json("fake_path.json", directed=True)
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=True),
+    )
 
     # Node checks
     assert graph.has_node("A")
@@ -45,8 +50,8 @@ def test_load_graph_from_json(mock_open):
     assert graph.get_node("A").get_attrs()["lat"] == 52.52
 
     # Edge checks
-    assert graph.get_neighbors("A") == {"B": 2.3}
-    assert graph.get_neighbors("B") == {"A": 2.5}
+    assert graph.get_neighbours("A") == {"B": 2.3}
+    assert graph.get_neighbours("B") == {"A": 2.5}
     assert graph.get_edge_cost("A", "B") == 2.3
     assert graph.get_edge_cost("B", "A") == 2.5
 
@@ -59,7 +64,10 @@ def test_load_graph_with_no_nodes(monkeypatch):
     fake_file = io.StringIO(json_str)
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
-    graph = load_graph_from_json("fake.json")
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     # Should still create nodes from edges
     assert graph.has_node("A")
@@ -75,11 +83,14 @@ def test_load_graph_with_no_edges(monkeypatch):
     fake_file = io.StringIO(json_str)
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
-    graph = load_graph_from_json("fake.json")
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.has_node("A")
     assert graph.has_node("B")
-    assert graph.get_neighbors("A") == {}
+    assert graph.get_neighbours("A") == {}
 
 
 def test_load_empty_json(monkeypatch):
@@ -88,7 +99,10 @@ def test_load_empty_json(monkeypatch):
     fake_file = io.StringIO(json_str)
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
-    graph = load_graph_from_json("fake.json")
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_all_nodes() == []
 
@@ -104,7 +118,10 @@ def test_load_graph_missing_edge_cost(monkeypatch):
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
 
     with pytest.raises(KeyError):
-        load_graph_from_json("fake.json")
+        JSONLoader().load(
+            JSONSource("fake.json"),
+            LoadOptions(directed=False),
+        )
 
 
 def test_undirected_graph(monkeypatch):
@@ -116,7 +133,10 @@ def test_undirected_graph(monkeypatch):
     fake_file = io.StringIO(json_str)
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
-    graph = load_graph_from_json("fake.json", directed=False)
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_edge_cost("X", "Y") == 10
     assert graph.get_edge_cost("Y", "X") == 10  # reverse edge must exist
@@ -131,7 +151,10 @@ def test_node_with_attributes(monkeypatch):
     fake_file = io.StringIO(json_str)
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: fake_file)
-    graph = load_graph_from_json("fake.json")
+    graph = JSONLoader().load(
+        JSONSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     node = graph.get_node("N1")
     assert node.get_attrs()["lat"] == 10.5

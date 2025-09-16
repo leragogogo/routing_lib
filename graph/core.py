@@ -135,9 +135,9 @@ class Graph:
         """
         return list(self.nodes.values())
 
-    def get_neighbors(self, id: str) -> dict[str, float]:
+    def get_neighbours(self, id: str) -> dict[str, float]:
         """
-        Get all neighbors of a given node.
+        Get all neighbours of a given node.
 
         :param id: ID of the node.
         :return: Dictionary of neighbor IDs and edge costs.
@@ -153,7 +153,7 @@ class Graph:
         :return: Cost of the edge if it exists, otherwise float('inf').
         """
         if self.has_node(from_id):
-            neighbors = self.get_neighbors(from_id)
-            if to_id in neighbors:
-                return neighbors[to_id]
+            neighbours = self.get_neighbours(from_id)
+            if to_id in neighbours:
+                return neighbours[to_id]
         return float("inf")

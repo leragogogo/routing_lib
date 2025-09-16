@@ -5,7 +5,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import io
 import pytest
-from graph.loader_osm import load_graph_from_osm_xml
+from graph.loader.loader_osm import OSMLoader
+from graph.loader.loader import LoadOptions, OSMSource
 
 
 # Sample test data
@@ -37,7 +38,10 @@ def mock_open(monkeypatch, sample_osm_xml_data):
 
 # Test using the mocked open and sample data
 def test_load_graph_from_osm_xml(mock_open):
-    graph = load_graph_from_osm_xml("fake_map.osm", directed=True)
+    graph = OSMLoader().load(
+        OSMSource("fake_map.json"),
+        LoadOptions(directed=True),
+    )
 
     # Check nodes exist
     assert graph.has_node("A")
@@ -48,9 +52,9 @@ def test_load_graph_from_osm_xml(mock_open):
     assert "lat" in attrs and "lon" in attrs
 
     # Check edge exist
-    print(graph.get_neighbors("A"))
+    print(graph.get_neighbours("A"))
     print({"B": pytest.approx(graph.get_edge_cost("A", "B"))})
-    assert graph.get_neighbors("A") == {"B": pytest.approx(graph.get_edge_cost("A", "B"))}
+    assert graph.get_neighbours("A") == {"B": pytest.approx(graph.get_edge_cost("A", "B"))}
 
 
 def test_osm_graph_with_no_nodes(monkeypatch):
@@ -63,7 +67,10 @@ def test_osm_graph_with_no_nodes(monkeypatch):
     </osm>
     """
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("fake.osm")
+    graph = OSMLoader().load(
+        OSMSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     # Should not crash, but nodes will not have lat/lon
     assert graph.has_node("A")
@@ -78,7 +85,10 @@ def test_osm_graph_with_no_ways(monkeypatch):
     </osm>
     """
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("fake.osm")
+    graph = OSMLoader().load(
+        OSMSource("fake.json"),
+        LoadOptions(directed=False),
+    )
 
     assert not graph.has_node("A")
     assert not graph.has_node("B")
@@ -88,7 +98,10 @@ def test_empty_osm_file(monkeypatch):
     empty_osm = "<osm version='0.6'></osm>"
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(empty_osm))
 
-    graph = load_graph_from_osm_xml("empty.osm")
+    graph = OSMLoader().load(
+        OSMSource("empty.osm"),
+        LoadOptions(directed=False),
+    )
     assert graph.get_all_nodes() == []
 
 
@@ -104,7 +117,10 @@ def test_undirected_osm_graph(monkeypatch):
     </osm>
     """
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("map.osm", directed=False)
+    graph = OSMLoader().load(
+        OSMSource("map.osm"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_edge_cost("X", "Y") > 0
     assert graph.get_edge_cost("Y", "X") > 0
@@ -130,7 +146,10 @@ def test_node_with_extra_attributes_and_tags(monkeypatch):
     """
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
 
-    graph = load_graph_from_osm_xml("tags.osm")
+    graph = OSMLoader().load(
+        OSMSource("tags.osm"),
+        LoadOptions(directed=False),
+    )
     assert graph.has_node("N1")
 
     attrs = graph.get_node("N1").get_attrs()
@@ -162,7 +181,10 @@ def test_filter_name_driveable(monkeypatch):
     """
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("map.osm", filter_name="driveable")
+    graph = OSMLoader().load(
+        OSMSource("map.osm", filter_name="driveable"),
+        LoadOptions(directed=False),
+    )
 
     # Only residential should be included
     assert graph.get_edge_cost("A", "B") > 0  # Way 1 only
@@ -187,7 +209,10 @@ def test_filter_name_pedestrian(monkeypatch):
     """
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("ped.osm", filter_name="pedestrian")
+    graph = OSMLoader().load(
+        OSMSource("ped.osm", filter_name="pedestrian"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_edge_cost("X", "Y") > 0  # Way 1 only
 
@@ -211,7 +236,10 @@ def test_filter_name_bicycle(monkeypatch):
     """
 
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
-    graph = load_graph_from_osm_xml("ped.osm", filter_name="bicycle")
+    graph = OSMLoader().load(
+        OSMSource("ped.osm", filter_name="bicycle"),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_edge_cost("X", "Y") > 0  # Way 1 only
 
@@ -239,7 +267,10 @@ def test_custom_way_filter(monkeypatch):
     def only_primary(tags: dict) -> bool:
         return tags.get("highway") == "primary"
 
-    graph = load_graph_from_osm_xml("custom.osm", way_filter=only_primary)
+    graph = OSMLoader().load(
+        OSMSource("custom.osm", way_filter=only_primary),
+        LoadOptions(directed=False),
+    )
 
     assert graph.get_edge_cost("M", "N") > 0  # Way 1 only
 
@@ -261,10 +292,9 @@ def test_way_filter_overrides_filter_name(monkeypatch):
 
     # Even though "driveable" would reject "cycleway",
     # the custom way_filter will accept all
-    graph = load_graph_from_osm_xml(
-        "override.osm",
-        filter_name="driveable",
-        way_filter=lambda tags: True  # Accept all ways
+    graph = OSMLoader().load(
+        OSMSource("override.osm", filter_name="driveable",way_filter=lambda tags: True),
+        LoadOptions(directed=False)
     )
 
     assert graph.get_edge_cost("C", "D") > 0
@@ -275,4 +305,7 @@ def test_invalid_filter_name_raises(monkeypatch):
     monkeypatch.setattr("builtins.open", lambda *args, **kwargs: io.StringIO(osm_data))
 
     with pytest.raises(ValueError):
-        load_graph_from_osm_xml("invalid.osm", filter_name="spaceships")
+        OSMLoader().load(
+            OSMSource("invalid.osm", filter_name="spaceships", ),
+            LoadOptions(directed=False)
+        )

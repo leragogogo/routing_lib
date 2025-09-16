@@ -40,7 +40,7 @@ def plot_graph(graph: Graph, output_file: str = "graph_map.html", zoom_start: in
         from_node = graph.get_node(from_id)
         lat1, lon1 = from_node.get_attrs().get("lat"), from_node.get_attrs().get("lon")
 
-        for to_id, _ in graph.get_neighbors(from_id).items():
+        for to_id, _ in graph.get_neighbours(from_id).items():
             to_node = graph.get_node(to_id)
             lat2, lon2 = to_node.get_attrs().get("lat"), to_node.get_attrs().get("lon")
 
