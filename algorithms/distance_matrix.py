@@ -12,7 +12,8 @@ def distance_matrix(
 
     Runs Dijkstra from each stop and builds:
       - a dense NumPy distance matrix,
-      - an node_to_index mapping from node IDs to matrix positions,
+      - a node_to_index mapping from node IDs to matrix indexes,
+      - index_to_node mapping from matrix indexes to node IDS,
       - a dictionary of reconstructed paths.
 
     :param graph: Graph object.
@@ -21,7 +22,8 @@ def distance_matrix(
         matrix: np.ndarray (n x n) of shortest path distances.
                 matrix[i, j] = shortest distance from stops[i] to stops[j].
                 If unreachable, value is np.inf.
-        node_to_index: dict[node_id -> int], maps node IDs to row/col indices of the matrix.
+        node_to_index: dict[node_id -> int], maps node IDs to row/col indexes of the matrix.
+        index_to_node: dict[int -> node_id], maps indexes of the matrix to node IDs to row/col.
         paths: dict[(source, target) -> list[str]], shortest path as a sequence of node IDs.
                Empty list if target is unreachable.
     """
