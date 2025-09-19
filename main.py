@@ -47,7 +47,7 @@ if __name__ == "__main__":
         node_to_index, random_stops[0], True
     )
     map_graph_moabit_json.add_tour(graph_moabit_json, tours_id, paths, total_len)
-    map_graph_moabit_json.save_file("moabit_graph_json_nn.html")
+    map_graph_moabit_json.save_file("graph_maps/moabit_graph_json_nn.html")
 
     # Load graph from CSV, add it to map,
     # and find the optimal(better than NN) tour using 2-opt optimization technique.
@@ -75,7 +75,7 @@ if __name__ == "__main__":
         tours_id, total_len
     )
     map_graph_moabit_csv.add_tour(graph_moabit_csv, tours_id, paths, total_len)
-    map_graph_moabit_csv.save_file("moabit_graph_csv_2opt.html")
+    map_graph_moabit_csv.save_file("graph_maps/moabit_graph_csv_2opt.html")
 
     # Load graph from OSM, add it to map,
     # and find the optimal(guaranteed) tour using Held-Karp algorithm.
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         index_to_node
     )
     map_graph_moabit_osm.add_tour(graph_moabit_osm, tours_id, paths, total_len)
-    map_graph_moabit_osm.save_file("moabit_graph_osm_held_karp.html")
+    map_graph_moabit_osm.save_file("graph_maps/moabit_graph_osm_held_karp.html")
 
     # Find the closest nodes from each graph.
     graph_gesundbrunnen_osm = load_graph(

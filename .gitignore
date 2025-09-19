@@ -1,6 +1,6 @@
 venv/
 .env/
 data/
-graph_map.html
+graph_maps/
 __pycache__/
 *.pyc
