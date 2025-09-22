@@ -16,7 +16,7 @@ class JSONLoader(AbstractLoader):
 
         :param source: JSONSource:
             A data source containing:
-                - filepath: Path to the JSOM file with graph.
+                - filepath: Path to the JSON file with graph.
 
         :param options: LoadOptions:
             Controls graph loading behavior:

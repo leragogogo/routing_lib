@@ -49,8 +49,6 @@ class OSMLoader(AbstractLoader):
         """
         Load a graph from an OSM XML (.osm) file.
 
-        Nodes must include id. Edges must include from, to, cost.
-
         :param source: JSONSource:
             A data source containing:
                 - filepath: Path to the JSOM file with graph.

@@ -13,7 +13,7 @@ import random
 def get_random_nodes(graph: Graph) -> list[str]:
     nodes = graph.get_all_nodes()
     nodes_ids = [node_id.get_id() for node_id in nodes]
-    n = random.randint(3, 6)
+    n = random.randint(3, 20)
     stops = []
     while len(stops) != n:
         choice = random.choice(nodes_ids)

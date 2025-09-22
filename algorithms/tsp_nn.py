@@ -15,7 +15,7 @@ def tsp_nn(
     distance between stops[i] and stops[j]. Greedily picks the nearest
     unvisited stop at each step.
 
-    Feasible for graphs with approximately up to 50 nodes.
+    Feasible for graphs with a couple of thousands nodes.
 
     :param stops: List of stop IDs.
     :param distances: NumPy (n x n) array of pairwise distances between stops.
